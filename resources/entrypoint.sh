@@ -33,15 +33,15 @@ if [[ ! -d /etc/ldap/slapd.d || "$SLAPD_FORCE_RECONFIGURE" == "true" ]]; then
     cp -a /etc/ldap.dist/* /etc/ldap
 
     cat <<-EOF | debconf-set-selections
-        slapd slapd/no_configuration boolean false
+       slapd slapd/no_configuration boolean true
         slapd slapd/password1 password $SLAPD_PASSWORD
         slapd slapd/password2 password $SLAPD_PASSWORD
         slapd shared/organization string $SLAPD_ORGANIZATION
         slapd slapd/domain string $SLAPD_DOMAIN
-        slapd slapd/backend select HDB
-        slapd slapd/allow_ldap_v2 boolean false
-        slapd slapd/purge_database boolean false
-        slapd slapd/move_old_database boolean true
+       slapd slapd/backend select HDB
+       slapd slapd/allow_ldap_v2 boolean false
+       slapd slapd/purge_database boolean false
+       slapd slapd/move_old_database boolean true
 EOF
 
     dpkg-reconfigure -f noninteractive slapd >/dev/null 2>&1
@@ -63,10 +63,10 @@ EOF
 
         sed_safe_password_hash=${password_hash//\//\\\/}
 
-        slapcat -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
-        sed -i "s/\(olcRootDN: cn=admin,cn=config\)/\1\nolcRootPW: ${sed_safe_password_hash}/g" /tmp/config.ldif
-        rm -rf /etc/ldap/slapd.d/*
-        slapadd -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif >/dev/null 2>&1
+       slapcat -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif
+       sed -i "s/\(olcRootDN: cn=admin,cn=config\)/\1\nolcRootPW: ${sed_safe_password_hash}/g" /tmp/config.ldif
+       rm -rf /etc/ldap/slapd.d/*
+       slapadd -n0 -F /etc/ldap/slapd.d -l /tmp/config.ldif >/dev/null 2>&1
     fi
 
     if [[ -n "$SLAPD_ADDITIONAL_SCHEMAS" ]]; then
@@ -85,7 +85,7 @@ EOF
         done
     fi
 
-    chown -R openldap:openldap /etc/ldap/slapd.d/
+   chown -R openldap:openldap /etc/ldap/slapd.d/
 else
     slapd_configs_in_env=`env | grep 'SLAPD_'`
 
@@ -94,7 +94,40 @@ else
     fi
 fi
 
-# Run script to load configuration into ldap
-/usr/local/bin/ldap_init.sh
+chown -R openldap:openldap /etc/ldap/slapd.d/
+
+
+# This checks if there is mounted volumes containing certs and schemas + users.
+# Osixia is due to migrating from different ldap which had different configuration
+#+ and that contains reference to these certs.
+if [[ -d /etc/ssl/certs && /tmp/schema-bckp.ldif ]] && [[ -f /tmp/schema-bckp.ldif && /tmp/users-bckp.ldif ]] ; then
+
+    echo "Existing schemas and users detected..."
+    echo "Removing slap.d/*..."
+    rm -rf /etc/ldap/slapd.d/*
+
+    echo "Moving certs..."
+    mv /etc/ssl/certs/osixia /
+    echo "Certs moved!"
+
+
+    echo "Adding schema..."
+    slapadd -n 0 -l /tmp/schema-bckp.ldif -F /etc/ldap/slapd.d
+
+    echo "Schema added..."
+
+    echo "Adding users..."
+    slapadd -n 1 -l /tmp/users-bckp.ldif -F /etc/ldap/slapd.d
+
+    echo "Users added..."
+
+    items_to_chown=( "/osixia/" "/etc/ssl/certs/" "/var/lib/slapd/" "/var/lib/ldap/" "/etc/ldap/slapd.d/" )
+    for i in "${items_to_chown[@]}"
+    do
+        chown -R openldap:openldap "$i"
+    done
+
+    echo "Chowning done!"
+fi
 
 exec "$@"
