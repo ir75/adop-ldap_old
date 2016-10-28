@@ -104,7 +104,7 @@ if [[ -d /etc/ssl/certs && /tmp/schema-bckp.ldif ]] && [[ -f /tmp/schema-bckp.ld
 
     echo "Existing schemas and users detected..."
     echo "Removing slap.d/*..."
-    rm -rf /etc/ldap/slapd.d/*
+    rm -rf /etc/ldap/slapd.d/* 
 
     echo "Moving certs..."
     cp -r /etc/ssl/certs/osixia /
@@ -128,6 +128,11 @@ if [[ -d /etc/ssl/certs && /tmp/schema-bckp.ldif ]] && [[ -f /tmp/schema-bckp.ld
     done
 
     echo "Chowning done!"
+    echo "Removing .ldif backup files..."
+    rm /tmp/schema-bckp.ldif /tmp/users-bckp.ldif
+    echo "Backup files removed!"
+else
+    /usr/local/bin/ldap_init.sh
 fi
 
 exec "$@"
