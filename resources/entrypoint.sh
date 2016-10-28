@@ -107,7 +107,7 @@ if [[ -d /etc/ssl/certs && /tmp/schema-bckp.ldif ]] && [[ -f /tmp/schema-bckp.ld
     rm -rf /etc/ldap/slapd.d/*
 
     echo "Moving certs..."
-    mv /etc/ssl/certs/osixia /
+    cp -r /etc/ssl/certs/osixia /
     echo "Certs moved!"
 
 
