@@ -31,6 +31,9 @@ apt-get update && \
 DEBIAN_FRONTEND=noninteractive apt-get install -y ldap-utils && \
 apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Create dir for backups
+RUN mkdir /backup
+
 # Override entry point
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["slapd", "-d", "32768", "-u", "openldap", "-g", "openldap"]

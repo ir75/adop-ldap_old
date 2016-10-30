@@ -100,7 +100,7 @@ chown -R openldap:openldap /etc/ldap/slapd.d/
 # This checks if there is mounted volumes containing certs and schemas + users.
 # Osixia is due to migrating from different ldap which had different configuration
 #+ and that contains reference to these certs.
-if [[ -d /etc/ssl/certs && /tmp/schema-bckp.ldif ]] && [[ -f /tmp/schema-bckp.ldif && /tmp/users-bckp.ldif ]] ; then
+if [[ -d /etc/ssl/certs && /backup/schema-bckp.ldif ]] && [[ -f /backup/schema-bckp.ldif && /backup/users-bckp.ldif ]] ; then
 
     echo "Existing schemas and users detected..."
     echo "Removing slap.d/*..."
@@ -112,12 +112,12 @@ if [[ -d /etc/ssl/certs && /tmp/schema-bckp.ldif ]] && [[ -f /tmp/schema-bckp.ld
 
 
     echo "Adding schema..."
-    slapadd -n 0 -l /tmp/schema-bckp.ldif -F /etc/ldap/slapd.d
+    slapadd -n 0 -l /backup/schema-bckp.ldif -F /etc/ldap/slapd.d
 
     echo "Schema added..."
 
     echo "Adding users..."
-    slapadd -n 1 -l /tmp/users-bckp.ldif -F /etc/ldap/slapd.d
+    slapadd -n 1 -l /backup/users-bckp.ldif -F /etc/ldap/slapd.d
 
     echo "Users added..."
 
@@ -129,7 +129,7 @@ if [[ -d /etc/ssl/certs && /tmp/schema-bckp.ldif ]] && [[ -f /tmp/schema-bckp.ld
 
     echo "Chowning done!"
     echo "Removing .ldif backup files..."
-    rm /tmp/schema-bckp.ldif /tmp/users-bckp.ldif
+    rm /backup/schema-bckp.ldif /backup/users-bckp.ldif
     echo "Backup files removed!"
 else
     /usr/local/bin/ldap_init.sh
